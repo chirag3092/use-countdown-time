@@ -12,8 +12,6 @@ yarn add use-countdown-time
 
 ## Usage
 
-### Without cache
-
 ```js
 import React from 'react'
 import useTimer, { FORWARD, BACKWARD } from "use-countdown-time";
