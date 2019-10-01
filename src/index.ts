@@ -1,116 +1,56 @@
-import { useReducer, useEffect } from 'react';
-import CacheAdapter from './CacheAdapter';
-export { default as LocalStorgeCacheAdapter } from './caches/LocalStorageCacheAdapter';
-export { default as MemoryCacheAdapter } from './caches/MemoryCacheAdapter';
+import { useState, useEffect } from "react";
 
-export const EVENTS = {
-  API_CALLED: 'api_called',
-  API_SUCCESS: 'api_success',
-  API_FAILURE: 'api_failure',
-};
+export const FORWARD = "forward";
+export const BACKWARD = "backward";
 
-type ResponseStatus = 'idle'|'pending'|'success'|'failure';
-export const RESPONSE_STATUS: { [key: string]: ResponseStatus } = {
-  idle: 'idle',
-  pending: 'pending',
-  success: 'success',
-  failure: 'failure',
-};
-
-interface State {
-  isLoading: boolean
-  response: any
-  status: ResponseStatus
+interface TimerOptions {
+  direction ?: string,
+  durationStep ?: number,
+  durationInterval ?: number,
 }
 
-const initialState: State = {
-  isLoading: false,
-  response: null,
-  status: RESPONSE_STATUS.idle,
-};
-
-interface Dispatch<T = any> {
-  type: string,
-  payload?: T,
-};
-
-const reducer = (state: any, { type, payload }: Dispatch) => {
-  switch (type) {
-    case EVENTS.API_CALLED:
-      return { response: null, isLoading: true, status: RESPONSE_STATUS.pending };
-    case EVENTS.API_FAILURE:
-      return { response: payload, isLoading: false, status: RESPONSE_STATUS.failure };
-    case EVENTS.API_SUCCESS:
-      return { response: payload, isLoading: false, status: RESPONSE_STATUS.success };
-    default:
-      return state;
-  }
-};
-
-interface Options {
-  cacheAdapter?:CacheAdapter
-  shouldCallPromiseFactory?: (...args: any[]) => boolean
-  cacheKey: string 
-}  
-
-const useCachedPromise = (promiseFactory: (...args: any[]) => Promise<any>, options: Options, ...args: any[]) => {
+const useTimer = (duration: number , timerOptions: TimerOptions = {}) => {
   const {
-    cacheAdapter,
-    shouldCallPromiseFactory = () => true,
-    cacheKey,
-  } = options;
+    direction = BACKWARD,
+    durationStep = 1,
+    durationInterval = 1000
+  } = timerOptions;
 
-  const [{ isLoading, response, status }, dispatch] = useReducer(reducer, initialState);
+  const startTime = direction === BACKWARD ? duration : 0;
+  const endTime = direction === BACKWARD ? 0 : duration;
 
-  const shouldCall = shouldCallPromiseFactory(...args);
+  const [leftTime, setLeftTIme] = useState(startTime);
 
-  async function resolvePromise({ dispatchEvent }: { dispatchEvent: (a: Dispatch) => void }) {
-   
-    if (cacheAdapter && await cacheAdapter.has(cacheKey) ) {
-      const hasKeyExpired =  await cacheAdapter.hasKeyExpired(cacheKey);
-      if(!hasKeyExpired) {
-        dispatchEvent({ type: EVENTS.API_CALLED });
-        
-        const data = await cacheAdapter.get(cacheKey);
+  const isTimeUp =
+    direction === BACKWARD ? leftTime <= endTime : leftTime >= endTime;
 
-        dispatchEvent({ type: EVENTS.API_SUCCESS, payload: data });
+  useEffect(() => {
+    const step = durationStep * (direction === BACKWARD ? -1 : 1);
+    if (isTimeUp) return () => {};
+    const timer = setTimeout(() => {
+      setLeftTIme(leftTime + durationStep * step);
+    }, durationInterval);
+    return () => clearTimeout(timer);
+  }, [leftTime, durationStep, durationInterval, direction, endTime, isTimeUp]);
 
-        return;
-      }
-    }
+  const weeks = Math.floor(leftTime / (3600 * 24 * 7));
 
-    if (shouldCall) {
-      dispatchEvent({ type: EVENTS.API_CALLED });
+  const days = Math.floor((leftTime / (3600 * 24)) % 7);
 
-      const data = await promiseFactory(...args);
+  const hours = Math.floor((leftTime / 3600) % 24);
 
-      dispatchEvent({ type: EVENTS.API_SUCCESS, payload: data });
+  const minutes = Math.floor((leftTime % 3600) / 60);
 
-      if (cacheAdapter) {
-        cacheAdapter.set(cacheKey, data);
-        cacheAdapter.refreshExpiry(cacheKey);
-      }
-    }
-  }
+  const seconds = Math.floor((leftTime % 3600) % 60);
 
-  useEffect(
-    () => {
-      let isCancelled = false;
-
-      const dispatchEvent = (a: Dispatch) => !isCancelled && dispatch(a);
-
-      resolvePromise({ dispatchEvent }).catch((error: Error) => {
-        dispatchEvent({ type: EVENTS.API_FAILURE, payload: error });
-      });
-
-      return () => {
-        isCancelled = true;
-      };
-    },
-    [shouldCall, ...args],
-  );
-
-  return { response, isLoading, status };
+  return {
+    weeks,
+    days,
+    hours,
+    minutes,
+    seconds,
+    isDone: isTimeUp
+  };
 };
 
-export default useCachedPromise;
+export default useTimer;

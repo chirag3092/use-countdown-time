@@ -1,13 +1,13 @@
-# use-cached-promise
-React hooks that allows to you to use cached promise factory.
+# use-countdown-time
+React hook Timer with Forward Backword direction.
  
 
-[![NPM](https://img.shields.io/npm/v/use-cached-promise.svg)](https://www.npmjs.com/package/use-cached-promise)
+[![NPM](https://img.shields.io/npm/v/use-countdown-time.svg)](https://www.npmjs.com/package/use-countdown-time)
 
 ## Install
 
 ```bash
-yarn add use-cached-promise
+yarn add use-countdown-time
 ```
 
 ## Usage
@@ -15,105 +15,35 @@ yarn add use-cached-promise
 ### Without cache
 
 ```js
-import React, { Component } from 'react'
-import useCachedPromise, { RESPONSE_STATUS } from "use-cached-promise";
+import React from 'react'
+import useTimer, { FORWARD, BACKWARD } from "use-countdown-time";
 
-const fetchIp = () =>
-  fetch("https://httpbin.org/get")
-    .then(r => r.json())
-    .then(({ origin }) => origin);
+function Timer() {
+  const duration = 60 * 60 * 24 * 7 * 2;
+  const timerOptions = {
+    direction: BACKWARD,
+    durationStep: 1,
+    durationInterval: 1000
+  };
 
-const options = {
-  cacheKey: "ipStore"
-};
-
-function IpInfo() {
-  const { response, status } = useCachedPromise(fetchIp, options);
-
+  const { weeks, days, hours, minutes, seconds, isDone } = useTimer(
+    duration,
+    timerOptions
+  );
   return (
     <div className="App">
-      <h1>{status === RESPONSE_STATUS.pending && "Loading..."}</h1>
-      <h1>{status === RESPONSE_STATUS.success && `Your ip is ${response}`}</h1>
+      {!isDone ? (
+        <div>
+          Now {weeks}: {days}: {hours}:{minutes}:{seconds} times left{" "}
+        </div>
+      ) : (
+        "Time Up"
+      )}{" "}
     </div>
   );
 }
-```
-
-### With cache
-
-```js
-import React, { Component } from 'react'
-import useCachedPromise, { RESPONSE_STATUS, LocalStorgeCacheAdapter } from "use-cached-promise";
-
-const fetchIp = () =>
-  fetch("https://httpbin.org/get")
-    .then(r => r.json())
-    .then(({ origin }) => origin);
-
-const options = {
-  cacheKey: "ipStore",
-  cacheAdapter: new LocalStorgeCacheAdapter()
-};
-
-function IpInfo() {
-  const { response, status } = useCachedPromise(fetchIp, options);
-
-  return (
-    <div className="App">
-      <h1>{status === RESPONSE_STATUS.pending && "Loading..."}</h1>
-      <h1>{status === RESPONSE_STATUS.success && `Your ip is ${response}`}</h1>
-    </div>
-  );
-}
-```
-
-### with expiry cache 
- ### If you want to cache data with expiry TIme  don't worry just call the function with expiry time check below example
-```js
-import React, { Component } from 'react'
-import useCachedPromise, { RESPONSE_STATUS, LocalStorgeCacheAdapter } from "use-cached-promise";
-const SECONDS = 1000;
-const fetchIp = () =>
-  fetch("https://httpbin.org/get")
-    .then(r => r.json())
-    .then(({ origin }) => origin);
-
-const options = {
-  cacheKey: "ipStore",
-  cacheAdapter: new LocalStorgeCacheAdapter({ maxAge: 5 * SECONDS })
-};
-
-function IpInfo() {
-  const { response, status } = useCachedPromise(fetchIp, options);
-
-  return (
-    <div className="App">
-      <h1>{status === RESPONSE_STATUS.pending && "Loading..."}</h1>
-      <h1>{status === RESPONSE_STATUS.success && `Your ip is ${response}`}</h1>
-    </div>
-  );
-}
-```
-
-
-### Response Status types
-* idle
-* pending
-* success
-* failure
-
-### Cache adapters
-
-* MemoryCacheAdapter
-```js
-import { MemoryCacheAdapter } from 'use-cached-promise';
-```
-
-* LocalStorageCacheAdapter
-```js
-import { LocalStorageCacheAdapter } from 'use-cached-promise';
 ```
 
 ## License
 
-MIT © [chirag](https://github.com/chirag)
+MIT © [chirag](https://github.com/chirag3092)
