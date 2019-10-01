@@ -1,6 +1,6 @@
 {
   "name": "use-countdown-time",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "React hook that allows to you cached a promise factory response",
   "author": "chirag",
   "license": "MIT",
